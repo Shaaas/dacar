@@ -27,6 +27,7 @@ const STATUS_OPTIONS = [
   "pending",
   "confirmed",
   "preparing",
+  "ready_for_pickup",
   "picked_up",
   "in_transit",
   "delivered",

@@ -61,8 +61,12 @@ export default function CheckoutPage() {
 
     const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
     const types = new Set(items.map((i) => i.itemType));
-    const orderType =
-      types.size > 1 ? "mixed" : types.has("menu_item") ? "food" : "grocery";
+    const hasFood = types.has("menu_item");
+    const orderType = types.size > 1 ? "mixed" : hasFood ? "food" : "grocery";
+
+    // Grocery-only orders skip kitchen prep and go straight to the rider queue.
+    // Food/mixed orders wait for the restaurant to confirm and prepare first.
+    const initialStatus = hasFood ? "pending" : "ready_for_pickup";
 
     const total = subtotal + DELIVERY_FEE;
 
@@ -71,7 +75,7 @@ export default function CheckoutPage() {
       .insert({
         profile_id: user.id,
         type: orderType,
-        status: "pending",
+        status: initialStatus,
         subtotal,
         delivery_fee: DELIVERY_FEE,
         total,

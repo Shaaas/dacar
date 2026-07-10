@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Nav from "@/components/Nav";
@@ -30,6 +30,26 @@ const STATUS_LABEL: Record<string, string> = {
   delivered: "Delivered",
 };
 
+function playAlertSound() {
+  try {
+    const AudioContextClass =
+      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new AudioContextClass();
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    oscillator.start();
+    oscillator.stop(ctx.currentTime + 0.5);
+  } catch {
+    // Audio not available in this context — fail silently
+  }
+}
+
 export default function RiderDashboard() {
   const supabase = createClient();
   const router = useRouter();
@@ -43,6 +63,10 @@ export default function RiderDashboard() {
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [justArrived, setJustArrived] = useState<Set<string>>(new Set());
+
+  const knownOrderIds = useRef<Set<string>>(new Set());
+  const hasLoadedOnce = useRef(false);
 
   const loadOrders = useCallback(
     async (currentRiderId: string) => {
@@ -59,11 +83,25 @@ export default function RiderDashboard() {
         const { data: pending } = await supabase
           .from("orders")
           .select("*")
-          .eq("status", "pending")
+          .eq("status", "ready_for_pickup")
           .is("rider_id", null)
           .order("created_at", { ascending: true });
 
-        setPendingOrders(pending ?? []);
+        const freshOrders = pending ?? [];
+        const freshIds = new Set(freshOrders.map((o) => o.id));
+
+        if (hasLoadedOnce.current) {
+          const newlyArrived = freshOrders.filter((o) => !knownOrderIds.current.has(o.id));
+          if (newlyArrived.length > 0) {
+            playAlertSound();
+            setJustArrived(new Set(newlyArrived.map((o) => o.id)));
+            setTimeout(() => setJustArrived(new Set()), 3000);
+          }
+        }
+
+        knownOrderIds.current = freshIds;
+        hasLoadedOnce.current = true;
+        setPendingOrders(freshOrders);
       } else {
         setPendingOrders([]);
       }
@@ -143,7 +181,7 @@ export default function RiderDashboard() {
         accepted_at: new Date().toISOString(),
       })
       .eq("id", orderId)
-      .eq("status", "pending")
+      .eq("status", "ready_for_pickup")
       .select();
 
     if (acceptError) {
@@ -196,7 +234,14 @@ export default function RiderDashboard() {
     <div className="min-h-screen flex flex-col">
       <Nav />
       <main className="flex-1 px-6 md:px-12 py-12 max-w-2xl mx-auto w-full">
-        <h1 className="font-display text-3xl font-semibold mb-8">Rider dashboard</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="font-display text-3xl font-semibold">Rider dashboard</h1>
+          {pendingOrders.length > 0 && !activeOrder && (
+            <span className="bg-dacar-green text-white text-xs font-mono px-3 py-1 rounded-full">
+              {pendingOrders.length} waiting
+            </span>
+          )}
+        </div>
 
         {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
@@ -238,11 +283,18 @@ export default function RiderDashboard() {
               {pendingOrders.map((order) => (
                 <div
                   key={order.id}
-                  className="border border-dacar-line rounded-xl p-5 bg-dacar-surface flex items-center justify-between"
+                  className={`border rounded-xl p-5 flex items-center justify-between transition ${
+                    justArrived.has(order.id)
+                      ? "border-dacar-green bg-dacar-green-tint"
+                      : "border-dacar-line bg-dacar-surface"
+                  }`}
                 >
                   <div>
                     <p className="text-sm font-medium">
                       Order #{order.id.slice(0, 8)} — {order.type}
+                      {justArrived.has(order.id) && (
+                        <span className="ml-2 text-xs text-dacar-green font-mono">NEW</span>
+                      )}
                     </p>
                     <p className="text-sm text-dacar-ink/60">
                       {order.delivery_address_text ?? "No address"}

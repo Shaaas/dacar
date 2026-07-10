@@ -7,6 +7,12 @@ import { createClient } from "@/lib/supabase/client";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 
+const ROLE_REDIRECTS: Record<string, string> = {
+  admin: "/admin",
+  rider: "/rider",
+  restaurant: "/restaurant",
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -21,7 +27,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -32,8 +38,21 @@ export default function LoginPage() {
       return;
     }
 
+    let destination = "/";
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profile?.role && ROLE_REDIRECTS[profile.role]) {
+        destination = ROLE_REDIRECTS[profile.role];
+      }
+    }
+
     setLoading(false);
-    router.push("/");
+    router.push(destination);
     router.refresh();
   }
 
@@ -75,8 +94,11 @@ export default function LoginPage() {
           </form>
 
           <p className="text-sm text-center mt-4">
-            <Link href="/auth/forgot-password" className="text-dacar-green font-medium">Forgot password?</Link>
+            <Link href="/auth/forgot-password" className="text-dacar-green font-medium">
+              Forgot password?
+            </Link>
           </p>
+
           <p className="text-sm text-dacar-ink/60 mt-6">
             Don&apos;t have an account?{" "}
             <Link href="/auth/signup" className="text-dacar-green font-medium">
@@ -89,4 +111,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
