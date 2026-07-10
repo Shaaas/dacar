@@ -1,6 +1,8 @@
 ﻿import { createClient } from "@/lib/supabase/server";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import BackLink from "@/components/BackLink";
+import GroceryItemCard from "@/components/GroceryItemCard";
 
 export default async function GroceriesPage() {
   const supabase = await createClient();
@@ -14,6 +16,7 @@ export default async function GroceriesPage() {
     <div className="min-h-screen flex flex-col">
       <Nav />
       <main className="flex-1 px-6 md:px-12 py-12">
+        <BackLink />
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-dacar-green mb-2">
           Market Runs
         </p>
@@ -26,15 +29,7 @@ export default async function GroceriesPage() {
         ) : (
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
             {items.map((item) => (
-              <div
-                key={item.id}
-                className="border border-dacar-line rounded-xl p-5 bg-dacar-surface"
-              >
-                <h2 className="font-display font-semibold mb-1">{item.name}</h2>
-                <p className="text-sm text-dacar-ink/60">
-                  KES {item.price} {item.unit ? `/ ${item.unit}` : ""}
-                </p>
-              </div>
+              <GroceryItemCard key={item.id} item={item} />
             ))}
           </div>
         )}

@@ -2,6 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import BackLink from "@/components/BackLink";
 
 export default async function FoodPage() {
   const supabase = await createClient();
@@ -14,6 +15,7 @@ export default async function FoodPage() {
     <div className="min-h-screen flex flex-col">
       <Nav />
       <main className="flex-1 px-6 md:px-12 py-12">
+        <BackLink />
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-dacar-green mb-2">
           Restaurants
         </p>

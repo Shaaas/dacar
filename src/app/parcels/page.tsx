@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import BackLink from "@/components/BackLink";
 import type { User } from "@supabase/supabase-js";
 
 export default function ParcelsPage() {
@@ -66,6 +67,7 @@ export default function ParcelsPage() {
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-dacar-green mb-2">
           Point to Point
         </p>
+        <BackLink />
         <h1 className="font-display text-3xl font-semibold mb-8">Send a parcel</h1>
 
         {checkingAuth ? null : !user ? (
@@ -141,3 +143,5 @@ export default function ParcelsPage() {
     </div>
   );
 }
+
+

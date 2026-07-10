@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useCart } from "@/context/CartContext";
 import type { User } from "@supabase/supabase-js";
 
 export default function Nav() {
   const supabase = createClient();
   const router = useRouter();
+  const { count } = useCart();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,6 +39,17 @@ export default function Nav() {
         dacar
       </Link>
       <div className="flex items-center gap-4">
+        <Link
+          href="/cart"
+          className="relative text-sm font-medium text-dacar-ink/70 hover:text-dacar-ink transition"
+        >
+          Cart
+          {count > 0 && (
+            <span className="absolute -top-2 -right-3 bg-dacar-green text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+              {count}
+            </span>
+          )}
+        </Link>
         {loading ? null : user ? (
           <>
             <Link
