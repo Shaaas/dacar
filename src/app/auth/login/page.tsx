@@ -74,6 +74,9 @@ export default function LoginPage() {
             </button>
           </form>
 
+          <p className="text-sm text-center mt-4">
+            <Link href="/auth/forgot-password" className="text-dacar-green font-medium">Forgot password?</Link>
+          </p>
           <p className="text-sm text-dacar-ink/60 mt-6">
             Don&apos;t have an account?{" "}
             <Link href="/auth/signup" className="text-dacar-green font-medium">
@@ -86,3 +89,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
